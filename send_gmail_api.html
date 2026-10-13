@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gmail API Send Bypass Utility</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <style>
+        :root {
+            --bg-main: #f0f4f9;
+            --text-primary: #1f1f1f;
+            --google-blue: #1a73e8;
+            --google-blue-hover: #1557b0;
+            --bg-card: #ffffff;
+            --border-color: #dadce0;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg-main);
+            color: var(--text-primary);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+            max-width: 480px;
+            width: 100%;
+            padding: 40px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 22px;
+            font-weight: 500;
+            margin-bottom: 12px;
+        }
+
+        p {
+            font-size: 14px;
+            color: #5f6368;
+            line-height: 1.6;
+            margin-bottom: 24px;
+        }
+
+        .btn {
+            background-color: var(--google-blue);
+            color: white;
+            border: none;
+            border-radius: 100px;
+            padding: 12px 28px;
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn:hover {
+            background-color: var(--google-blue-hover);
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        .status-box {
+            margin-top: 24px;
+            padding: 16px;
+            border-radius: 8px;
+            font-size: 13px;
+            text-align: left;
+            display: none;
+        }
+
+        .status-box.info {
+            background-color: #e8f0fe;
+            color: #1967d2;
+            display: block;
+        }
+
+        .status-box.success {
+            background-color: #e6f4ea;
+            color: #137333;
+            display: block;
+        }
+
+        .status-box.error {
+            background-color: #fce8e6;
+            color: #c5221f;
+            display: block;
+        }
+
+        .details {
+            margin-top: 20px;
+            font-size: 12px;
+            color: #70757a;
+            border-top: 1px solid var(--border-color);
+            padding-top: 16px;
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Google Logo -->
+        <svg viewBox="0 0 24 24" width="60" height="24" style="margin-bottom: 16px;" xmlns="http://www.w3.org/2000/svg">
+            <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+            <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+            <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" fill="#FBBC05"/>
+            <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" fill="#EA4335"/>
+        </svg>
+
+        <h1>Gmail API Email Dispatcher</h1>
+        <p>
+            This utility uses the official Google Gmail REST API to send emails over HTTPS (Port 443), bypassing outbound SMTP port blocks enforced by your network provider.
+        </p>
+
+        <button class="btn" id="sendBtn">
+            <span>Authorize & Send Email</span>
+        </button>
+
+        <div class="status-box" id="statusBox"></div>
+
+        <div class="details">
+            <strong>Parameters configured:</strong><br>
+            • Client ID: <code>520126807116-ent9ouccb1ddfopu3dkldk4g6nop9ksn...</code><br>
+            • Recipient: <code>hirthikbalaji2006@gmail.com</code><br>
+            • Scope: <code>https://www.googleapis.com/auth/gmail.send</code>
+        </div>
+    </div>
+
+    <script>
+        const CLIENT_ID = '520126807116-ent9ouccb1ddfopu3dkldk4g6nop9ksn.apps.googleusercontent.com';
+        const RECIPIENT = 'hirthikbalaji2006@gmail.com';
+        
+        const sendBtn = document.getElementById('sendBtn');
+        const statusBox = document.getElementById('statusBox');
+
+        let tokenClient;
+
+        window.onload = function () {
+            // Initialize the OAuth2 Token Client
+            try {
+                tokenClient = google.accounts.oauth2.initTokenClient({
+                    client_id: CLIENT_ID,
+                    scope: 'https://www.googleapis.com/auth/gmail.send',
+                    callback: handleTokenResponse
+                });
+                showStatus('ready', 'Google OAuth client initialized successfully.');
+            } catch (err) {
+                showStatus('error', 'Failed to initialize Google SDK. Ensure you are connected to the internet.');
+            }
+        };
+
+        sendBtn.addEventListener('click', () => {
+            if (!tokenClient) {
+                showStatus('error', 'Google SDK is not loaded yet.');
+                return;
+            }
+            showStatus('info', 'Opening Google Authentication pop-up...');
+            tokenClient.requestAccessToken();
+        });
+
+        function handleTokenResponse(response) {
+            if (response.error !== undefined) {
+                showStatus('error', 'Authorization failed: ' + response.error);
+                return;
+            }
+            
+            showStatus('info', 'Authorization successful! Compiling MIME message and sending...');
+            sendMail(response.access_token);
+        }
+
+        function showStatus(type, message) {
+            statusBox.className = 'status-box ' + type;
+            statusBox.innerHTML = message;
+        }
+
+        // Construct email and send via REST call
+        function sendMail(accessToken) {
+            // Create raw MIME message
+            const subject = 'Verified Gmail API Authentication Bypass Test';
+            const body = 'Success!\n\nThis email was sent via the official Google Gmail REST API over secure HTTPS Port 443, bypassing the local ISP network block on standard SMTP ports.';
+            
+            const emailContent = 
+                `To: ${RECIPIENT}\r\n` +
+                `Subject: ${subject}\r\n` +
+                `Content-Type: text/plain; charset="UTF-8"\r\n\r\n` +
+                `${body}`;
+
+            // Base64URL encode the MIME string (as required by Google API)
+            const encodedMail = btoa(unescape(encodeURIComponent(emailContent)))
+                .replace(/\+/g, '-')
+                .replace(/\//g, '_')
+                .replace(/=+$/, '');
+
+            // POST to Gmail send endpoint
+            fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
+                method: 'POST',
+                headers: {
+                    'Authorization': 'Bearer ' + accessToken,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    raw: encodedMail
+                })
+            })
+            .then(res => {
+                if (!res.ok) {
+                    return res.json().then(err => { throw new Error(err.error.message || 'API Error') });
+                }
+                return res.json();
+            })
+            .then(data => {
+                showStatus('success', '<strong>Success!</strong> Email sent to <strong>' + RECIPIENT + '</strong>.<br>Message ID: ' + data.id);
+            })
+            .catch(err => {
+                showStatus('error', 'Gmail API Error: ' + err.message);
+            });
+        }
+    </script>
+</body>
+</html>
